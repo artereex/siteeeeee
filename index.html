@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>География 4 основных инфекционных заболеваний</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --info-color: #9b59b6;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.6;
+            background-color: #f5f7fa;
+        }
+        header {
+            background: linear-gradient(135deg, var(--secondary-color), #1a2533);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            font-weight: 300;
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+        h2 {
+            color: var(--secondary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-top: 40px;
+            font-size: 1.8rem;
+        }
+        #map {
+            height: 650px;
+            width: 100%;
+            margin: 25px 0;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .legend {
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: var(--secondary-color);
+            font-size: 15px;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 10px;
+            opacity: 0.9;
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+        .disease-card {
+            background: white;
+            border: none;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .disease-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        .disease-card h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 12px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+        }
+        .disease-card h3::before {
+            content: "";
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .malaria-card h3::before { background-color: var(--danger-color); }
+        .tuberculosis-card h3::before { background-color: var(--primary-color); }
+        .flu-card h3::before { background-color: var(--warning-color); }
+        .dengue-card h3::before { background-color: var(--info-color); }
+        
+        footer {
+            background: linear-gradient(135deg, var(--secondary-color), #1a2533);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 50px;
+        }
+        .footer-text {
+            opacity: 0.8;
+            font-weight: 300;
+            margin: 5px 0;
+        }
+        .disease-buttons {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .disease-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .disease-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.15);
+        }
+        .disease-btn i {
+            font-size: 18px;
+        }
+        #malaria-btn { 
+            background-color: var(--danger-color); 
+            color: white; 
+        }
+        #tuberculosis-btn { 
+            background-color: var(--primary-color); 
+            color: white; 
+        }
+        #flu-btn { 
+            background-color: var(--warning-color); 
+            color: white; 
+        }
+        #dengue-btn { 
+            background-color: var(--info-color); 
+            color: white; 
+        }
+        #reset-btn { 
+            background-color: #666; 
+            color: white; 
+        }
+        #map-loading {
+            text-align: center;
+            padding: 30px;
+            font-style: italic;
+            color: #666;
+            font-size: 18px;
+        }
+        .country-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+            pointer-events: none;
+            color: #333;
+        }
+        .popup-content {
+            min-width: 200px;
+        }
+        .popup-content h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .popup-content p {
+            margin: 8px 0;
+        }
+        .stat-badge {
+            display: inline-block;
+            background-color: #f8f9fa;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+            color: #666;
+        }
+        @media (max-width: 768px) {
+            #map {
+                height: 500px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .disease-buttons {
+                gap: 8px;
+            }
+            .disease-btn {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>4 основные инфекционные заболевания в мире</h1>
+            <p class="subtitle">Интерактивная карта распространения и статистика</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <section>
+            <h2>Карта распространения</h2>
+            
+            <!-- Кнопки для навигации -->
+            <div class="disease-buttons">
+                <button id="malaria-btn" class="disease-btn">
+                    <i class="fas fa-bug"></i> Малярия
+                </button>
+                <button id="tuberculosis-btn" class="disease-btn">
+                    <i class="fas fa-lungs"></i> Туберкулёз
+                </button>
+                <button id="flu-btn" class="disease-btn">
+                    <i class="fas fa-head-side-cough"></i> Грипп
+                </button>
+                <button id="dengue-btn" class="disease-btn">
+                    <i class="fas fa-temperature-high"></i> Лихорадка Денге
+                </button>
+                <button id="reset-btn" class="disease-btn">
+                    <i class="fas fa-globe"></i> Общий вид
+                </button>
+            </div>
+            
+            <div id="map">
+                <div id="map-loading">Загрузка карты...</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Основные заболевания</h2>
+            
+            <div class="disease-card malaria-card">
+                <h3>1. Малярия <span class="stat-badge">247 млн случаев в год</span></h3>
+                <p><strong><i class="fas fa-map-marked-alt" style="color: var(--danger-color);"></i> Регионы распространения:</strong> Африка южнее Сахары, Южная Азия, Центральная и Южная Америка</p>
+                <p><strong><i class="fas fa-syringe" style="color: var(--danger-color);"></i> Симптомы:</strong> Лихорадка, озноб, головная боль, тошнота</p>
+                <p><strong><i class="fas fa-shield-alt" style="color: var(--danger-color);"></i> Профилактика:</strong> Противомоскитные сетки, репелленты, профилактические лекарства</p>
+                <p><i class="fas fa-info-circle" style="color: var(--danger-color);"></i> <strong>Факт:</strong> Передается через укусы комаров рода Anopheles</p>
+            </div>
+            
+            <div class="disease-card tuberculosis-card">
+                <h3>2. Туберкулёз <span class="stat-badge">10.6 млн заболевших</span></h3>
+                <p><strong><i class="fas fa-map-marked-alt" style="color: var(--primary-color);"></i> Регионы распространения:</strong> Африка, Юго-Восточная Азия, Восточная Европа</p>
+                <p><strong><i class="fas fa-syringe" style="color: var(--primary-color);"></i> Симптомы:</strong> Кашель (иногда с кровью), потеря веса, ночная потливость</p>
+                <p><strong><i class="fas fa-shield-alt" style="color: var(--primary-color);"></i> Профилактика:</strong> Вакцинация БЦЖ, раннее выявление и лечение</p>
+                <p><i class="fas fa-info-circle" style="color: var(--primary-color);"></i> <strong>Факт:</strong> Одна из 10 основных причин смерти в мире</p>
+            </div>
+            
+            <div class="disease-card flu-card">
+                <h3>3. Грипп <span class="stat-badge">1 млрд случаев ежегодно</span></h3>
+                <p><strong><i class="fas fa-map-marked-alt" style="color: var(--warning-color);"></i> Регионы распространения:</strong> Все регионы мира, особенно умеренные широты</p>
+                <p><strong><i class="fas fa-syringe" style="color: var(--warning-color);"></i> Симптомы:</strong> Высокая температура, озноб, боль в мышцах, кашель, головная боль</p>
+                <p><strong><i class="fas fa-shield-alt" style="color: var(--warning-color);"></i> Профилактика:</strong> Ежегодная вакцинация, гигиена рук, избегание контактов с больными</p>
+                <p><i class="fas fa-info-circle" style="color: var(--warning-color);"></i> <strong>Факт:</strong> Вирусы гриппа постоянно мутируют, требуя новых вакцин</p>
+            </div>
+            
+            <div class="disease-card dengue-card">
+                <h3>4. Лихорадка Денге <span class="stat-badge">100-400 млн случаев ежегодно</span></h3>
+                <p><strong><i class="fas fa-map-marked-alt" style="color: var(--info-color);"></i> Регионы распространения:</strong> Юго-Восточная Азия, Латинская Америка, острова Тихого океана</p>
+                <p><strong><i class="fas fa-syringe" style="color: var(--info-color);"></i> Симптомы:</strong> Высокая температура, сильная головная боль, боль в мышцах</p>
+                <p><strong><i class="fas fa-shield-alt" style="color: var(--info-color);"></i> Профилактика:</strong> Уничтожение мест размножения комаров</p>
+                <p><i class="fas fa-info-circle" style="color: var(--info-color);"></i> <strong>Факт:</strong> Также известна как "костоломная лихорадка"</p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p class="footer-text">Индивидуальный проект по географии | 10 класс</p>
+            <p class="footer-text">Источники данных: Всемирная организация здравоохранения (ВОЗ)</p>
+            <p class="footer-text"><i class="far fa-calendar-alt"></i> Обновлено: 2023 год</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script>
+        // Инициализация карты
+        let map;
+        try {
+            map = L.map('map').setView([10, 20], 2);
+            document.getElementById('map-loading').style.display = 'none';
+            
+            // Основной источник карты
+            const mainTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Альтернативный источник на случай проблем с основным
+            const altTileLayer = L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            });
+            
+            // Проверка доступности основного источника
+            fetch('https://tile.openstreetmap.org/0/0/0.png')
+                .catch(() => {
+                    mainTileLayer.remove();
+                    altTileLayer.addTo(map);
+                });
+            
+        } catch (e) {
+            document.getElementById('map-loading').textContent = 'Ошибка загрузки карты. Пожалуйста, проверьте подключение к интернету.';
+            console.error('Ошибка инициализации карты:', e);
+        }
+
+        // Цвета для разных заболеваний
+        function getColor(disease) {
+            return disease === 'Малярия' ? '#e74c3c' :
+                   disease === 'Туберкулёз' ? '#3498db' :
+                   disease === 'Грипп' ? '#f39c12' :
+                   '#9b59b6'; // Денге
+        }
+
+        // Иконки для маркеров
+        function createIcon(disease) {
+            return L.divIcon({
+                className: 'disease-marker',
+                html: `<div style="background:${getColor(disease)}; width:24px; height:24px; border-radius:50%; border:3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.2);"></div>`,
+                iconSize: [30, 30]
+            });
+        }
+
+        // Координаты центров для каждой болезни
+        const diseaseCenters = {
+            'Малярия': { center: [-5, 25], zoom: 3 },
+            'Туберкулёз': { center: [20, 80], zoom: 3 },
+            'Грипп': { center: [30, 100], zoom: 2 },
+            'Лихорадка Денге': { center: [5, 100], zoom: 3 }
+        };
+
+        // Данные по точкам распространения
+        const diseasePoints = [
+            // Малярия
+            { lat: -6, lng: 35, disease: "Малярия", country: "Танзания", description: "Высокий риск малярии круглый год" },
+            { lat: 7, lng: 80, disease: "Малярия", country: "Шри-Ланка", description: "Сезонные вспышки после муссонов" },
+            { lat: -4, lng: -60, disease: "Малярия", country: "Бразилия", description: "Эндемичные районы Амазонии" },
+            { lat: 10, lng: 10, disease: "Малярия", country: "Нигерия", description: "25% всех случаев малярии в Африке" },
+            
+            // Туберкулёз
+            { lat: -26, lng: 28, disease: "Туберкулёз", country: "ЮАР", description: "Высокая заболеваемость, включая ШЛУ-ТБ" },
+            { lat: 22, lng: 88, disease: "Туберкулёз", country: "Индия", description: "27% всех случаев туберкулеза в мире" },
+            { lat: 55, lng: 37, disease: "Туберкулёз", country: "Россия", description: "Высокий уровень лекарственно-устойчивых форм" },
+            { lat: 40, lng: 100, disease: "Туберкулёз", country: "Китай", description: "Вторая по заболеваемости страна после Индии" },
+            
+            // Грипп
+            { lat: 40, lng: -100, disease: "Грипп", country: "США", description: "Ежегодные эпидемии в зимний период" },
+            { lat: 55, lng: 37, disease: "Грипп", country: "Россия", description: "Сезонные вспышки с ноября по март" },
+            { lat: 35, lng: 140, disease: "Грипп", country: "Япония", description: "Высокая заболеваемость в городах" },
+            { lat: -30, lng: 150, disease: "Грипп", country: "Австралия", description: "Сезон гриппа с мая по октябрь" },
+            
+            // Денге
+            { lat: 13, lng: 100, disease: "Лихорадка Денге", country: "Таиланд", description: "Сезонные эпидемии в сезон дождей" },
+            { lat: 10, lng: 106, disease: "Лихорадка Денге", country: "Вьетнам", description: "Эндемичная зона с 1960-х годов" },
+            { lat: 14, lng: 121, disease: "Лихорадка Денге", country: "Филиппины", description: "Ежегодные вспышки с тысячами случаев" }
+        ];
+
+        // Добавление точечных маркеров
+        if (map) {
+            diseasePoints.forEach(point => {
+                const marker = L.marker([point.lat, point.lng], {
+                    icon: createIcon(point.disease)
+                }).addTo(map)
+                .bindPopup(`
+                    <div class="popup-content">
+                        <h3>${point.disease}</h3>
+                        <p><strong><i class="fas fa-map-marker-alt"></i> ${point.country}</strong></p>
+                        <p>${point.description}</p>
+                    </div>
+                `);
+                
+                // Добавляем подпись страны рядом с маркером
+                L.marker([point.lat, point.lng], {
+                    icon: L.divIcon({
+                        className: 'country-label',
+                        html: point.country,
+                        iconSize: [100, 20]
+                    }),
+                    zIndexOffset: -1000
+                }).addTo(map);
+            });
+
+            // Легенда карты
+            const legend = L.control({position: 'bottomright'});
+
+            legend.onAdd = function() {
+                const div = L.DomUtil.create('div', 'legend');
+                const diseases = ['Малярия', 'Туберкулёз', 'Грипп', 'Лихорадка Денге'];
+                const colors = ['#e74c3c', '#3498db', '#f39c12', '#9b59b6'];
+                
+                div.innerHTML = '<h4><i class="fas fa-legend"></i> Заболевания</h4>';
+                
+                for (let i = 0; i < diseases.length; i++) {
+                    div.innerHTML +=
+                        '<i style="background:' + colors[i] + '"></i> ' +
+                        diseases[i] + '<br>';
+                }
+                
+                div.innerHTML += '<p style="margin-top:10px;"><small><i class="fas fa-info-circle"></i> Кликните на маркер для подробностей</small></p>';
+                
+                return div;
+            };
+
+            legend.addTo(map);
+
+            // Обработчики для кнопок
+            document.getElementById('malaria-btn').addEventListener('click', function() {
+                const { center, zoom } = diseaseCenters['Малярия'];
+                map.flyTo(center, zoom);
+            });
+
+            document.getElementById('tuberculosis-btn').addEventListener('click', function() {
+                const { center, zoom } = diseaseCenters['Туберкулёз'];
+                map.flyTo(center, zoom);
+            });
+
+            document.getElementById('flu-btn').addEventListener('click', function() {
+                const { center, zoom } = diseaseCenters['Грипп'];
+                map.flyTo(center, zoom);
+            });
+
+            document.getElementById('dengue-btn').addEventListener('click', function() {
+                const { center, zoom } = diseaseCenters['Лихорадка Денге'];
+                map.flyTo(center, zoom);
+            });
+
+            document.getElementById('reset-btn').addEventListener('click', function() {
+                map.flyTo([10, 20], 2);
+            });
+        }
+    </script>
+</body>
+</html>
